@@ -1,4 +1,4 @@
-FROM python
+FROM python:3.10-alpine
 WORKDIR /code
 ENV FLASK_APP=bar.py
 ENV FLASK_RUN_HOST=0.0.0.0

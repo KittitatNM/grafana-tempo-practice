@@ -2,13 +2,31 @@ receivers:
   otlp:
     protocols:
       grpc:
+        include_metadata: true
       http:
+        cors:
+          allowed_origins:
+            - '*'
+          allowed_headers:
+            - '*'
+        include_metadata: true
+
+processors:
+  batch:
+
 exporters:
   otlp:
     endpoint: tempo:55680
-    insecure: true
+    # insecure: true
+  logging:
+    loglevel: debug
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [otlp]
+      processors: [batch]
+      exporters: [otlp,logging]
+    logs: 
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [logging]

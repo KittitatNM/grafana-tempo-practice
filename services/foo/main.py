@@ -96,6 +96,9 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 import requests
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter as OTLPSpanExporterHTTP,
+)
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -111,7 +114,11 @@ BAR_ENDPOINT = os.getenv("BAR_ENDPOINT", "http://localhost:5001/bar")
 
 
 class SpanFormatter(logging.Formatter):
+    def __init__(self, fmt):
+        super().__init__()
+        
     def format(self, record):
+        print("setformatter")
         trace_id = trace.get_current_span().get_span_context().trace_id
         if trace_id == 0:
             record.trace_id = None
@@ -127,22 +134,55 @@ trace.set_tracer_provider(
     TracerProvider(resource=resource)
 )
 otlp_exporter = OTLPSpanExporter(endpoint=f"{AGENT_HOSTNAME}:{AGENT_PORT}", insecure=True)
+OTEL_HTTP_ENDPOINT = os.environ.get(
+    "OTEL_HTTP_ENDPOINT", "http://otel-collector:4318/v1/traces"
+)
+http_otlp_exporter = OTLPSpanExporterHTTP(OTEL_HTTP_ENDPOINT)
 trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
+trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(http_otlp_exporter))
+
 
 
 app = FastAPI()
 
-FastAPIInstrumentor().instrument_app(app)
+FastAPIInstrumentor().instrument_app(app,trace)
 RequestsInstrumentor().instrument()
 
-log = logging.getLogger("werkzeug")
-ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
-ch.setFormatter(SpanFormatter(
-        'time="%(asctime)s" service=%(name)s level=%(levelname)s %(message)s trace_id=%(trace_id)s'
-    ))
-log.addHandler(ch)
+# logger = logging.getLogger("werkzeug")
+# ch = logging.StreamHandler()
+# ch.setLevel(logging.DEBUG)
+# ch.setFormatter(SpanFormatter(
+#         'time="%(asctime)s" service=%(name)s level=%(levelname)s %(message)s trace_id=%(trace_id)s'
+#     ))
+# logger.addHandler(ch)
+# logger.debug("start ------------------------------------")
 
+
+# create logger with 'spam_application'
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('spam.log')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+chnew = logging.StreamHandler()
+chnew.setLevel(logging.INFO)
+
+
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+chnew.setFormatter(SpanFormatter('time="%(asctime)s" service=%(name)s level=%(levelname)s %(message)s trace_id=%(trace_id)s'))
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
+logger.addHandler(chnew)
+
+logger.info('creating an instance of auxiliary_module.Auxiliary')
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
@@ -150,8 +190,8 @@ async def add_process_time_header(request: Request, call_next):
     response = await call_next(request)
     # process_time = time.time() - start_time
     # response.headers["X-Process-Time"] = str(process_time)
-    print(request)
-    log.info(
+    # print(request)
+    logger.info(
         'test'
     )
     return response
@@ -162,6 +202,7 @@ def read_root():
 
 @app.get("/foo")
 def foo():
+    logger.info("echo test ----------------")
     tracer = trace.get_tracer(__name__)
     with tracer.start_as_current_span("bar-request"):
         r = requests.get(BAR_ENDPOINT)
