@@ -4,6 +4,7 @@ receivers:
       grpc:
         include_metadata: true
       http:
+        endpoint: "0.0.0.0:4318"
         cors:
           allowed_origins:
             - '*'
@@ -15,9 +16,15 @@ processors:
   batch:
 
 exporters:
+  # otlp:
+  #   endpoint: tempo:55680
+  #   tls:
+  #     insecure: true
+  #   # insecure: true
   otlp:
-    endpoint: tempo:55680
-    # insecure: true
+    endpoint: tempo:4317
+    tls:
+      insecure: true
   logging:
     loglevel: debug
 service:

@@ -135,7 +135,7 @@ trace.set_tracer_provider(
 )
 otlp_exporter = OTLPSpanExporter(endpoint=f"{AGENT_HOSTNAME}:{AGENT_PORT}", insecure=True)
 OTEL_HTTP_ENDPOINT = os.environ.get(
-    "OTEL_HTTP_ENDPOINT", "http://otel-collector:4318/v1/traces"
+    "OTEL_HTTP_ENDPOINT", "http://localhost:4318/v1/traces"
 )
 http_otlp_exporter = OTLPSpanExporterHTTP(OTEL_HTTP_ENDPOINT)
 trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
@@ -191,9 +191,9 @@ async def add_process_time_header(request: Request, call_next):
     # process_time = time.time() - start_time
     # response.headers["X-Process-Time"] = str(process_time)
     # print(request)
-    logger.info(
-        'test'
-    )
+    # logger.info(
+    #     'test'
+    # )
     return response
 
 @app.get("/")
