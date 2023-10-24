@@ -135,7 +135,7 @@ trace.set_tracer_provider(
 )
 otlp_exporter = OTLPSpanExporter(endpoint=f"{AGENT_HOSTNAME}:{AGENT_PORT}", insecure=True)
 OTEL_HTTP_ENDPOINT = os.environ.get(
-    "OTEL_HTTP_ENDPOINT", "http://localhost:4318/v1/traces"
+    "OTEL_HTTP_ENDPOINT", "http://0.0.0.0:4318/v1/traces"
 )
 http_otlp_exporter = OTLPSpanExporterHTTP(OTEL_HTTP_ENDPOINT)
 trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))

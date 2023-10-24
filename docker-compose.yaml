@@ -1,5 +1,12 @@
 version: "3"
 services:
+  cat-service:
+    build: ./services/cat-service/.
+    ports:
+      - "3001:3001"
+    # environment:
+    #   - OPEN_TELEMETRY_URL='http://192.168.1.6:4318/v1/traces'
+
   foo:
     build: ./services/foo/.
     ports:
@@ -17,6 +24,7 @@ services:
     # platform: linux/amd64
     # image: otel/opentelemetry-collector:0.25.0
     # image: otel/opentelemetry-collector-contrib
+    # container_name: otel-collector
     image: otel/opentelemetry-collector:0.61.0
     # command: [--config=/etc/otel-collector-config.yaml]
     ports:
@@ -24,8 +32,8 @@ services:
       - "14268:14268"
       # - "4317:4317"
       # - "4318:4318"
-      - "4317:4317"
-      - "4318:4318"
+      # - "4317:4317"
+      # - "4318:4318"
     volumes:
       - ./config/otel-collector.yaml:/config/otel-collector.yaml
     command:
@@ -37,8 +45,10 @@ services:
     ports:
       - "3100:3100"
       - "55680:55680"
-      - "4317"
-      - "4318"
+      # - "4317"
+      # - "4318"
+      - "4317:4317"
+      - "4318:4318"
     volumes:
       - ./config/tempo.yaml:/etc/tempo.yaml
       - ./example-data/tempo:/tmp/tempo
